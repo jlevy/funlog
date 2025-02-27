@@ -1,0 +1,9 @@
+# Changes here will be overwritten by Copier. Do not edit manually.
+_commit: '8840062'
+_src_path: gh:jlevy/simple-modern-poetry
+package_author_email: joshua@cal.berkeley.edu
+package_author_name: Joshua Levy
+package_description: Simple, useful decorators for logging and tallying function calls
+package_github_org: jlevy
+package_name: funlog
+package_slug: funlog
