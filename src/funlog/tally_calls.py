@@ -1,6 +1,7 @@
 import functools
+import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Callable, cast, Dict, Optional, TypeVar
 
 from .log_calls import (
@@ -25,6 +26,7 @@ class Tally:
 
 
 _tallies: Dict[str, Tally] = {}
+_tallies_lock = threading.Lock()
 
 
 def tally_calls(
@@ -44,7 +46,7 @@ def tally_calls(
 
     def decorator(func: F) -> F:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             start_time = time.time()
 
             result = func(*args, **kwargs)
@@ -54,34 +56,41 @@ def tally_calls(
 
             func_name = _func_and_module_name(func)
 
-            if func_name not in _tallies:
-                _tallies[func_name] = Tally()
+            should_log = False
+            calls: int = 0
+            total_time: float = 0.0
 
-            _tallies[func_name].calls += 1
-            _tallies[func_name].total_time += elapsed
+            with _tallies_lock:
+                if func_name not in _tallies:
+                    _tallies[func_name] = Tally()
 
-            if _tallies[func_name].total_time >= min_total_runtime and (
-                elapsed > if_slower_than
-                or _tallies[func_name].calls
-                >= periodic_ratio * _tallies[func_name].last_logged_count
-                or _tallies[func_name].total_time
-                >= periodic_ratio * _tallies[func_name].last_logged_total_time
-            ):
+                _tallies[func_name].calls += 1
+                _tallies[func_name].total_time += elapsed
+
+                should_log = _tallies[func_name].total_time >= min_total_runtime and (
+                    elapsed > if_slower_than
+                    or _tallies[func_name].calls
+                    >= periodic_ratio * _tallies[func_name].last_logged_count
+                    or _tallies[func_name].total_time
+                    >= periodic_ratio * _tallies[func_name].last_logged_total_time
+                )
+
+                if should_log:
+                    calls = _tallies[func_name].calls
+                    total_time = _tallies[func_name].total_time
+                    _tallies[func_name].last_logged_count = calls
+                    _tallies[func_name].last_logged_total_time = total_time
+
+            if should_log:
                 log_func(
                     "%s %s() took %s, now called %d times, %s avg per call, total time %s",
                     EMOJI_TIMING,
                     func_name,
                     format_duration(elapsed),
-                    _tallies[func_name].calls,
-                    format_duration(
-                        _tallies[func_name].total_time / _tallies[func_name].calls
-                    ),
-                    format_duration(_tallies[func_name].total_time),
+                    calls,
+                    format_duration(total_time / calls),
+                    format_duration(total_time),
                 )
-                _tallies[func_name].last_logged_count = _tallies[func_name].calls
-                _tallies[func_name].last_logged_total_time = _tallies[
-                    func_name
-                ].total_time
 
             return result
 
@@ -100,14 +109,17 @@ def log_tallies(
     """
     log_func = _get_log_func(level, log_func)
 
+    with _tallies_lock:
+        tallies_copy = {k: replace(t) for k, t in _tallies.items()}
+
     tallies_to_log = {
-        k: t for k, t in _tallies.items() if t.total_time >= if_slower_than
+        k: t for k, t in tallies_copy.items() if t.total_time >= if_slower_than
     }
     if tallies_to_log:
         log_lines = []
         log_lines.append(f"{EMOJI_TIMING} Function tallies:")
         for fkey, t in sorted(
-            _tallies.items(), key=lambda item: item[1].total_time, reverse=True
+            tallies_to_log.items(), key=lambda item: item[1].total_time, reverse=True
         ):
             log_lines.append(
                 "    %s() was called %d times, total time %s, avg per call %s"

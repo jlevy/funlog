@@ -1,51 +1,66 @@
-
 # funlog
 
-\[ 
-**☞☞☞ This is the readme for a project from the
-[simple-modern-poetry](https://github.com/jlevy/simple-modern-poetry)
-template.**
-Fill it in and delete this message!
-Below are brief instructions on setup and development workflows that you may
-use or modify for your project.
-\]
+`funlog` is a tiny but quite useful package that offers a few Python decorators to log
+function calls, with good control over what gets logged and when.
+It also times the function call and logs arguments briefly but clearly, abbreviating
+arguments like long strings or dataclasses.
 
-## Installing Python, pipx, and Poetry
+It is fully customizable with optional decorator arguments.
+You can log only slow calls, only if a function modifies its first argument, or tally
+calls and log them later.
 
-Sadly, there are many, many ways to install and set up your Python environment, each
-with its own pitfalls.
+I'm publishing it standalone since I often like to drop this into projects and it
+simplifies print-debugging a lot of things or lets you do very lightweight profiling
+where get logs if certain functions are taking a lot of time, or tallies of function
+calls after a program runs a while or at exit.
 
-This is a quick cheat sheet for one of the simplest and most reliable ways to set up
-**Python 3.11+** and **Poetry 2.0+** (what you should use as of 2025) using
-[**pyenv**](https://github.com/pyenv/pyenv) and
-[**pipx**](https://github.com/pypa/pipx).
+Minimal dependencies (only the tiny [strif](https://github.com/jlevy/strif)).
 
-For macOS:
+## Installation
 
 ```shell
-brew update
-brew install pyenv pipx
+pip install funlog
 ```
 
-For Ubuntu:
+## Usage
 
-```shell
-curl https://pyenv.run | bash
-apt install pipx
+Suppose you have a few functions:
+
+```python
+import time
+import logging
+from funlog import log_calls, log_if_modifies, log_tallies, tally_calls
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(levelname)s:%(message)s",
+    force=True,
+)
+
+@log_calls()
+def add(a, b):
+    return a + b
+
+@log_calls(level="warn", if_slower_than=0.1, show_return_value=False)
+def slow_function(delay):
+    time.sleep(delay)
+    return f"Slept for {delay} seconds"
+
+# Now call the functions.
+add(2, 3)
+slow_function(0.5)
 ```
 
-Now you can install a current Python and Poetry:
+Running that gives you:
 
-```shell
-pyenv install 3.12.9  # Pick the version you want.
-pipx install poetry
+```
+INFO:≫ Call: __main__.add(2, 3)
+INFO:≪ Call done: __main__.add() took 0.00ms: 5
+WARNING:⏱ Call to __main__.slow_function(0.5) took 503ms
 ```
 
-For Windows or other platforms, see the pyenv and poetry instructions. 
-
-## Development
-
-For development workflows, see [development.md](development.md).
+See [test_examples.py](tests/test_examples.py) for more examples and docstrings for more
+docs on all the options.
 
 * * *
 
