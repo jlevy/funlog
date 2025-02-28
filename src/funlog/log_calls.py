@@ -20,6 +20,9 @@ EMOJI_CALL_BEGIN = "≫"
 EMOJI_CALL_END = "≪"
 EMOJI_TIMING = "⏱"
 
+# Support the non-standard "message" log level, if the logger does support message
+# level as a higher-priority informative log level.
+# Just gracefully fall back to "warning" if not supported.
 LogLevelStr: TypeAlias = Literal["debug", "info", "warning", "error", "message"]
 LogFunc: TypeAlias = Callable[..., None]
 
@@ -34,6 +37,8 @@ log = logging.getLogger(__name__)
 def _get_log_func(level: LogLevelStr, log_func: Optional[LogFunc] = None) -> LogFunc:
     if log_func is None:
         log_func = getattr(log, level.lower(), None)
+        if level == "message" and log_func is None:
+            log_func = log.warning  # Fallback for logger without "message" level.
     if log_func is None:
         raise ValueError(f"Invalid log level: {level!r}")
     return log_func
