@@ -9,11 +9,9 @@ from typing import List
 
 from funlog import log_calls, log_if_modifies, log_tallies, tally_calls
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(levelname)s:%(message)s",
-    force=True,  # This ensures the configuration is applied even if logging was already configured
-)
+# This ensures the configuration is applied even if logging was already configured.
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)s:%(message)s", force=True)
+
 log = logging.getLogger(__name__)
 
 
