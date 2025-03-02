@@ -6,7 +6,7 @@ authors = [
 ]
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.10,<4.0"
 dynamic = [ "dependencies", "version" ]
 
 [tool.poetry]
@@ -33,7 +33,7 @@ poetry-plugin-shell = "^1.0.1"
 poetry-plugin-up = "^0.9.0"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.10,<4.0"
 strif = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
