@@ -197,29 +197,44 @@ def log_calls(
                 log_func(f"{EMOJI_CALL_BEGIN} Call: {call_str}")
 
             start_time = time.time()
+            exception_info = None
+            result = None
+            try:
+                result = func(*args, **kwargs)
+                return result
+            except Exception as e:
+                exception_info = str(e)
+                raise  # Re-raise to preserve stack trace.
+            finally:
+                end_time = time.time()
+                elapsed = end_time - start_time
 
-            result = func(*args, **kwargs)
-
-            end_time = time.time()
-            elapsed = end_time - start_time
-
-            if show_returns:
-                if show_calls:
-                    # If we already logged the call, log the return in a corresponding style.
-                    return_msg = f"{EMOJI_CALL_END} Call done: {func_name}() took {format_duration(elapsed)}"
-                else:
-                    return_msg = f"{EMOJI_TIMING} Call to {call_str} took {format_duration(elapsed)}"
-                if show_return_value:
-                    log_func("%s: %s", return_msg, to_str(result))
-                else:
+                if show_returns:
+                    if exception_info:
+                        return_msg = (
+                            f"{EMOJI_CALL_END} Exception: {func_name}(): "
+                            f"{abbrev_str(exception_info, truncate_length)}"
+                        )
+                    else:
+                        if show_calls:
+                            # If we already logged the call, log the return in a corresponding style.
+                            return_msg = (
+                                f"{EMOJI_CALL_END} Call done: {func_name}() "
+                                f"took {format_duration(elapsed)}"
+                            )
+                        else:
+                            return_msg = (
+                                f"{EMOJI_TIMING} Call to {call_str} took {format_duration(elapsed)}"
+                            )
+                    if show_return_value and not exception_info:
+                        log_func("%s: %s", return_msg, to_str(result))
+                    else:
+                        log_func("%s", return_msg)
+                elif elapsed > if_slower_than:
+                    return_msg = (
+                        f"{EMOJI_TIMING} Call to {call_str} took {format_duration(elapsed)}"
+                    )
                     log_func("%s", return_msg)
-            elif elapsed > if_slower_than:
-                return_msg = (
-                    f"{EMOJI_TIMING} Call to {call_str} took {format_duration(elapsed)}"
-                )
-                log_func("%s", return_msg)
-
-            return result
 
         return cast(F, wrapper)
 
@@ -232,7 +247,8 @@ def log_if_modifies(
     log_func: Optional[LogFunc] = None,
 ) -> Callable[[F], F]:
     """
-    Decorator to log function calls if the returned value differs from the first argument input.
+    Decorator to log function calls if the returned value differs from the first
+    argument input. Does not log exceptions.
     """
     log_func = _get_log_func(level, log_func)
 

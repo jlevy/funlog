@@ -40,6 +40,8 @@ def tally_calls(
     Decorator to monitor performance by tallying function calls and total runtime, only logging
     periodically (every time calls exceed `periodic_ratio` more in count or runtime than the last
     time it was logged) or if runtime is greater than `if_slower_than` seconds).
+
+    Currently does not log exceptions.
     """
 
     log_func = _get_log_func(level, log_func)
@@ -112,9 +114,7 @@ def log_tallies(
     with _tallies_lock:
         tallies_copy = {k: replace(t) for k, t in _tallies.items()}
 
-    tallies_to_log = {
-        k: t for k, t in tallies_copy.items() if t.total_time >= if_slower_than
-    }
+    tallies_to_log = {k: t for k, t in tallies_copy.items() if t.total_time >= if_slower_than}
     if tallies_to_log:
         log_lines = []
         log_lines.append(f"{EMOJI_TIMING} Function tallies:")
