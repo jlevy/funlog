@@ -92,9 +92,12 @@ def format_duration(seconds: float) -> str:
         return f"{seconds:.0f}s"
 
 
-def _func_and_module_name(func: Callable[..., Any]) -> str:
-    short_module = func.__module__.split(".")[-1] if func.__module__ else None
-    return f"{short_module}.{func.__qualname__}" if short_module else func.__qualname__
+def function_name(func: Callable[..., Any], include_module: bool = True) -> str:
+    if include_module:
+        short_module = func.__module__.split(".")[-1] if func.__module__ else None
+        return f"{short_module}.{func.__qualname__}" if short_module else func.__qualname__
+    else:
+        return func.__qualname__
 
 
 def default_to_str(value: Any) -> str:
@@ -142,18 +145,25 @@ def log_calls(
     show_return_value: bool = True,
     show_calls_only: bool = False,
     show_returns_only: bool = False,
+    show_timing_only: bool = False,
     if_slower_than: float = 0.0,
     truncate_length: int | None = DEFAULT_TRUNCATE,
     repr_func: Callable[[Any], str] = quote_if_needed,
     log_func: LogFunc | None = None,
+    include_module: bool = True,
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator to log function calls and returns and time taken, with optional display of
-    arguments and return values. By default both calls and returns are logged, but set
-    `show_calls_only` or `show_returns_only` to log only calls or returns.
+    arguments and return values.
 
     You can control whether to show arg values and return values with `show_args` and
     `show_return_value` (truncating at `truncate_length`).
+
+    By default both calls and returns are logged, but this is also customizable:
+
+    - `show_calls_only=True` to log only calls
+    - `show_returns_only=True` to log only returns
+    - `show_timing_only=True` only logs the timing of the call very briefly
 
     If `if_slower_than_sec` is set, only log calls that take longer than that number of
     seconds.
@@ -181,14 +191,18 @@ def log_calls(
     if show_calls_only:
         show_calls = True
         show_returns = False
-    elif show_returns_only:
+    elif show_returns_only or show_timing_only:
         show_calls = False
         show_returns = True
+    if show_timing_only:
+        show_return_value = False
+        show_args = False
+        include_module = False
 
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            func_name = _func_and_module_name(func)
+            func_name = function_name(func, include_module)
 
             # Capture args now in case they are mutated by the function.
             call_str = format_call(func_name, args, kwargs)
@@ -245,6 +259,7 @@ def log_if_modifies(
     level: LogLevelStr = "info",
     repr_func: Callable[[Any], str] = repr,
     log_func: LogFunc | None = None,
+    include_module: bool = True,
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator to log function calls if the returned value differs from the first
@@ -262,7 +277,7 @@ def log_if_modifies(
             result = func(*args, **kwargs)
 
             if result != original_value:
-                func_name = _func_and_module_name(func)
+                func_name = function_name(func, include_module)
                 log_func(
                     "%s(%s) -> %s",
                     func_name,

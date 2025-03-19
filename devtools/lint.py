@@ -2,6 +2,8 @@ import subprocess
 
 from rich import print as rprint
 
+from funlog import log_calls
+
 # Update as needed.
 SRC_PATHS = ["src", "tests", "devtools"]
 DOC_PATHS = ["README.md"]
@@ -27,7 +29,9 @@ def main():
     return errcount
 
 
+@log_calls(level="warning", show_timing_only=True)
 def _run(cmd: list[str]) -> int:
+    rprint()
     rprint(f"[bold green]❯ {' '.join(cmd)}[/bold green]")
     errcount = 0
     try:
@@ -35,7 +39,6 @@ def _run(cmd: list[str]) -> int:
     except subprocess.CalledProcessError as e:
         rprint(f"[bold red]Error: {e}[/bold red]")
         errcount = 1
-    rprint()
 
     return errcount
 

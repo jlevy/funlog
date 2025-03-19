@@ -9,9 +9,9 @@ from .log_calls import (
     EMOJI_TIMING,
     LogFunc,
     LogLevelStr,
-    _func_and_module_name,
     _get_log_func,
     format_duration,
+    function_name,
 )
 
 
@@ -39,6 +39,7 @@ def tally_calls(
     periodic_ratio: float = 2.0,
     if_slower_than: float = DISABLED,
     log_func: LogFunc | None = None,
+    include_module: bool = True,
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator to monitor performance by tallying function calls and total runtime, only logging
@@ -60,7 +61,7 @@ def tally_calls(
             end_time = time.time()
             elapsed = end_time - start_time
 
-            func_name = _func_and_module_name(func)
+            func_name = function_name(func, include_module)
 
             should_log = False
             calls: int = 0
