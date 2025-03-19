@@ -58,7 +58,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "strif" }]
+requires-dist = [{ name = "strif", specifier = ">=0.2.1" }]
 
 [package.metadata.requires-dev]
 dev = [
