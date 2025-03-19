@@ -1,17 +1,13 @@
 import functools
 import logging
 import time
+from collections.abc import Callable, Iterable
 from typing import (
     Any,
-    Callable,
-    cast,
-    Dict,
-    Iterable,
-    List,
     Literal,
-    Optional,
     TypeAlias,
     TypeVar,
+    cast,
 )
 
 from strif import abbrev_str, quote_if_needed, single_line
@@ -34,7 +30,7 @@ DEFAULT_TRUNCATE = 200
 log = logging.getLogger(__name__)
 
 
-def _get_log_func(level: LogLevelStr, log_func: Optional[LogFunc] = None) -> LogFunc:
+def _get_log_func(level: LogLevelStr, log_func: LogFunc | None = None) -> LogFunc:
     if log_func is None:
         log_func = getattr(log, level.lower(), None)
         if level == "message" and log_func is None:
@@ -49,7 +45,7 @@ def balance_quotes(s: str) -> str:
     Ensure balanced single and double quotes in a string, adding any missing quotes.
     This is valuable especially for log file syntax highlighting.
     """
-    stack: List[str] = []
+    stack: list[str] = []
     for char in s:
         if char in ("'", '"'):
             if stack and stack[-1] == char:
@@ -67,7 +63,7 @@ def balance_quotes(s: str) -> str:
 def abbreviate_arg(
     value: Any,
     repr_func: Callable = quote_if_needed,
-    truncate_length: Optional[int] = DEFAULT_TRUNCATE,
+    truncate_length: int | None = DEFAULT_TRUNCATE,
 ) -> str:
     """
     Abbreviate an argument value for logging.
@@ -109,7 +105,7 @@ def default_to_str(value: Any) -> str:
 
 def format_args(
     args: Iterable[Any],
-    kwargs: Dict[str, Any],
+    kwargs: dict[str, Any],
     to_str: Callable[[Any], str] = default_to_str,
 ) -> str:
     return ", ".join(
@@ -120,7 +116,7 @@ def format_args(
 def format_func_call(
     func_name: str,
     args: Iterable[Any],
-    kwargs: Dict[str, Any],
+    kwargs: dict[str, Any],
     to_str: Callable[[Any], str] = default_to_str,
 ) -> str:
     """
@@ -145,9 +141,9 @@ def log_calls(
     show_calls_only: bool = False,
     show_returns_only: bool = False,
     if_slower_than: float = 0.0,
-    truncate_length: Optional[int] = DEFAULT_TRUNCATE,
+    truncate_length: int | None = DEFAULT_TRUNCATE,
     repr_func: Callable = quote_if_needed,
-    log_func: Optional[LogFunc] = None,
+    log_func: LogFunc | None = None,
 ) -> Callable[[F], F]:
     """
     Decorator to log function calls and returns and time taken, with optional display of
@@ -244,7 +240,7 @@ def log_calls(
 def log_if_modifies(
     level: LogLevelStr = "info",
     repr_func: Callable = repr,
-    log_func: Optional[LogFunc] = None,
+    log_func: LogFunc | None = None,
 ) -> Callable[[F], F]:
     """
     Decorator to log function calls if the returned value differs from the first

@@ -1,18 +1,18 @@
 import functools
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, replace
-from typing import Any, Callable, cast, Dict, Optional, TypeVar
+from typing import Any, TypeVar, cast
 
 from .log_calls import (
-    _func_and_module_name,
-    _get_log_func,
     EMOJI_TIMING,
-    format_duration,
     LogFunc,
     LogLevelStr,
+    _func_and_module_name,
+    _get_log_func,
+    format_duration,
 )
-
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -25,7 +25,7 @@ class Tally:
     last_logged_total_time: float = 0.0
 
 
-_tallies: Dict[str, Tally] = {}
+_tallies: dict[str, Tally] = {}
 _tallies_lock = threading.Lock()
 
 
@@ -34,7 +34,7 @@ def tally_calls(
     min_total_runtime: float = 0.0,
     periodic_ratio: float = 2.0,
     if_slower_than: float = float("inf"),
-    log_func: Optional[LogFunc] = None,
+    log_func: LogFunc | None = None,
 ) -> Callable[[F], F]:
     """
     Decorator to monitor performance by tallying function calls and total runtime, only logging
@@ -104,7 +104,7 @@ def tally_calls(
 def log_tallies(
     level: LogLevelStr = "info",
     if_slower_than: float = 0.0,
-    log_func: Optional[LogFunc] = None,
+    log_func: LogFunc | None = None,
 ):
     """
     Log all tallies and runtimes of tallied functions.

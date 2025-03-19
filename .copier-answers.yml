@@ -1,9 +1,9 @@
 # Changes here will be overwritten by Copier. Do not edit manually.
-_commit: 77a7151
+_commit: 98316a7
 _src_path: gh:jlevy/simple-modern-uv
 package_author_email: joshua@cal.berkeley.edu
 package_author_name: Joshua Levy
 package_description: Simple, useful decorators for logging and tallying function calls
 package_github_org: jlevy
+package_module: funlog
 package_name: funlog
-package_slug: funlog

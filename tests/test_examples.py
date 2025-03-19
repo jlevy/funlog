@@ -5,7 +5,6 @@ Some basic examples of how to use the `log_calls`, `log_if_modifies`, and
 
 import logging
 import time
-from typing import List
 
 from funlog import log_calls, log_if_modifies, log_tallies, tally_calls
 
@@ -54,7 +53,7 @@ def slow_function(delay):
 
 # Example of log_if_modifies decorator:
 @log_if_modifies()
-def append_if_not_exists(items: List[str], item: str) -> List[str]:
+def append_if_not_exists(items: list[str], item: str) -> list[str]:
     if item not in items:
         items.append(item)
     return items
