@@ -5,9 +5,9 @@ from collections.abc import Callable, Iterable
 from typing import (
     Any,
     Literal,
+    ParamSpec,
     TypeAlias,
     TypeVar,
-    cast,
 )
 
 from strif import abbrev_str, quote_if_needed, single_line
@@ -21,8 +21,6 @@ EMOJI_TIMING = "⏱"
 # Just gracefully fall back to "warning" if not supported.
 LogLevelStr: TypeAlias = Literal["debug", "info", "warning", "error", "message"]
 LogFunc: TypeAlias = Callable[..., None]
-
-F = TypeVar("F", bound=Callable[..., Any])
 
 
 DEFAULT_TRUNCATE = 200
@@ -62,7 +60,7 @@ def balance_quotes(s: str) -> str:
 
 def abbreviate_arg(
     value: Any,
-    repr_func: Callable = quote_if_needed,
+    repr_func: Callable[[Any], str] = quote_if_needed,
     truncate_length: int | None = DEFAULT_TRUNCATE,
 ) -> str:
     """
@@ -94,7 +92,7 @@ def format_duration(seconds: float) -> str:
         return f"{seconds:.0f}s"
 
 
-def _func_and_module_name(func: Callable):
+def _func_and_module_name(func: Callable[..., Any]) -> str:
     short_module = func.__module__.split(".")[-1] if func.__module__ else None
     return f"{short_module}.{func.__qualname__}" if short_module else func.__qualname__
 
@@ -134,6 +132,10 @@ def format_func_call(
     return f"{func_name}({format_args(args, kwargs, to_str)})"
 
 
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
 def log_calls(
     level: LogLevelStr = "info",
     show_args: bool = True,
@@ -142,9 +144,9 @@ def log_calls(
     show_returns_only: bool = False,
     if_slower_than: float = 0.0,
     truncate_length: int | None = DEFAULT_TRUNCATE,
-    repr_func: Callable = quote_if_needed,
+    repr_func: Callable[[Any], str] = quote_if_needed,
     log_func: LogFunc | None = None,
-) -> Callable[[F], F]:
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator to log function calls and returns and time taken, with optional display of
     arguments and return values. By default both calls and returns are logged, but set
@@ -159,9 +161,11 @@ def log_calls(
     By default, uses standard logging with the given `level`, but you can pass in a a custom
     `log_func` to override that. By default shows values using `quot
     """
-    to_str = lambda value: abbreviate_arg(value, repr_func, truncate_length)
 
-    def format_call(func_name: str, args, kwargs):
+    def to_str(value: Any) -> str:
+        return abbreviate_arg(value, repr_func, truncate_length)
+
+    def format_call(func_name: str, args: Any, kwargs: Any):
         if show_args:
             return format_func_call(func_name, args, kwargs, to_str)
         else:
@@ -181,9 +185,9 @@ def log_calls(
         show_calls = False
         show_returns = True
 
-    def decorator(func: F) -> F:
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             func_name = _func_and_module_name(func)
 
             # Capture args now in case they are mutated by the function.
@@ -232,29 +236,29 @@ def log_calls(
                     )
                     log_func("%s", return_msg)
 
-        return cast(F, wrapper)
+        return wrapper
 
-    return cast(Callable[[F], F], decorator)
+    return decorator
 
 
 def log_if_modifies(
     level: LogLevelStr = "info",
-    repr_func: Callable = repr,
+    repr_func: Callable[[Any], str] = repr,
     log_func: LogFunc | None = None,
-) -> Callable[[F], F]:
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator to log function calls if the returned value differs from the first
     argument input. Does not log exceptions.
     """
     log_func = _get_log_func(level, log_func)
 
-    def decorator(func: F) -> F:
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             if not args:
                 raise ValueError("Function must have at least one positional argument")
 
-            original_value = args[0]
+            original_value: Any = args[0]
             result = func(*args, **kwargs)
 
             if result != original_value:
@@ -268,6 +272,6 @@ def log_if_modifies(
 
             return result
 
-        return cast(F, wrapper)
+        return wrapper
 
     return decorator

@@ -16,37 +16,37 @@ log = logging.getLogger(__name__)
 
 # Default: info level, show args and return values:
 @log_calls()
-def add(a, b):
+def add(a: int, b: int) -> int:
     return a + b
 
 
 # Don't show arguments:
 @log_calls(level="debug", show_args=False)
-def multiply(a, b):
+def multiply(a: int, b: int) -> int:
     return a * b
 
 
 # Don't show return value:
 @log_calls(show_return_value=False)
-def divide(a, b):
+def divide(a: float, b: float) -> float:
     return a / b
 
 
 # Only log when function is called:
 @log_calls(show_calls_only=True)
-def subtract(a, b):
+def subtract(a: int, b: int) -> int:
     return a - b
 
 
 # Only log when function returns:
 @log_calls(show_returns_only=True)
-def power(a, b):
+def power(a: int, b: int) -> int:
     return a**b
 
 
 # Only log if function takes longer than 0.1s:
 @log_calls(if_slower_than=0.1)
-def slow_function(delay):
+def slow_function(delay: float) -> str:
     time.sleep(delay)
     return f"Slept for {delay} seconds"
 
@@ -61,14 +61,14 @@ def append_if_not_exists(items: list[str], item: str) -> list[str]:
 
 # Examples of tally_calls decorator:
 @tally_calls()
-def fibonacci(n):
+def fibonacci(n: int) -> int:
     if n <= 1:
         return n
     return fibonacci(n - 1) + fibonacci(n - 2)
 
 
 @tally_calls(min_total_runtime=0.1, periodic_ratio=1.5)
-def slow_counter(n):
+def slow_counter(n: int) -> int:
     time.sleep(0.01)
     return n + 1
 

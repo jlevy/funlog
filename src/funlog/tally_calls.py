@@ -3,7 +3,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, replace
-from typing import Any, TypeVar, cast
+from typing import ParamSpec, TypeVar
 
 from .log_calls import (
     EMOJI_TIMING,
@@ -13,8 +13,6 @@ from .log_calls import (
     _get_log_func,
     format_duration,
 )
-
-F = TypeVar("F", bound=Callable[..., Any])
 
 
 @dataclass
@@ -29,13 +27,19 @@ _tallies: dict[str, Tally] = {}
 _tallies_lock = threading.Lock()
 
 
+P = ParamSpec("P")
+R = TypeVar("R")
+
+DISABLED = float("inf")
+
+
 def tally_calls(
     level: LogLevelStr = "info",
     min_total_runtime: float = 0.0,
     periodic_ratio: float = 2.0,
-    if_slower_than: float = float("inf"),
+    if_slower_than: float = DISABLED,
     log_func: LogFunc | None = None,
-) -> Callable[[F], F]:
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator to monitor performance by tallying function calls and total runtime, only logging
     periodically (every time calls exceed `periodic_ratio` more in count or runtime than the last
@@ -46,9 +50,9 @@ def tally_calls(
 
     log_func = _get_log_func(level, log_func)
 
-    def decorator(func: F) -> F:
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             start_time = time.time()
 
             result = func(*args, **kwargs)
@@ -96,9 +100,9 @@ def tally_calls(
 
             return result
 
-        return cast(F, wrapper)
+        return wrapper
 
-    return cast(Callable[[F], F], decorator)
+    return decorator
 
 
 def log_tallies(
@@ -116,13 +120,13 @@ def log_tallies(
 
     tallies_to_log = {k: t for k, t in tallies_copy.items() if t.total_time >= if_slower_than}
     if tallies_to_log:
-        log_lines = []
+        log_lines: list[str] = []
         log_lines.append(f"{EMOJI_TIMING} Function tallies:")
         for fkey, t in sorted(
             tallies_to_log.items(), key=lambda item: item[1].total_time, reverse=True
         ):
             log_lines.append(
-                "    %s() was called %d times, total time %s, avg per call %s"
+                "    %s() was called %d times, total time %s, avg per call %s"  # noqa: UP031
                 % (
                     fkey,
                     t.calls,
