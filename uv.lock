@@ -44,9 +44,6 @@ wheels = [
 [[package]]
 name = "funlog"
 source = { editable = "." }
-dependencies = [
-    { name = "strif" },
-]
 
 [package.dev-dependencies]
 dev = [
@@ -58,7 +55,6 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "strif", specifier = ">=0.2.1" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -196,15 +192,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/00/ef/033022a6b104be32e899b00de704d7c6d1723a54d4c9e09d147368f14b62/ruff-0.11.0-py3-none-win32.whl", hash = "sha256:3191e9116b6b5bbe187447656f0c8526f0d36b6fd89ad78ccaad6bdc2fad7df2", size = 10310905 },
     { url = "https://files.pythonhosted.org/packages/ed/8a/163f2e78c37757d035bd56cd60c8d96312904ca4a6deeab8442d7b3cbf89/ruff-0.11.0-py3-none-win_amd64.whl", hash = "sha256:c58bfa00e740ca0a6c43d41fb004cd22d165302f360aaa56f7126d544db31a21", size = 11411730 },
     { url = "https://files.pythonhosted.org/packages/4e/f7/096f6efabe69b49d7ca61052fc70289c05d8d35735c137ef5ba5ef423662/ruff-0.11.0-py3-none-win_arm64.whl", hash = "sha256:868364fc23f5aa122b00c6f794211e85f7e78f5dffdf7c590ab90b8c4e69b657", size = 10538956 },
-]
-
-[[package]]
-name = "strif"
-version = "2.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/80/98/7cef4d6fcd9273f209c0b732ef76e972477d906576c27691ac6a9f2dc9f4/strif-2.1.0.tar.gz", hash = "sha256:42b19114e8c5e5763936233b4bb5b3f12d421bb138fcd93fa025ab7361cffea7", size = 27093 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9e/95/579444185a9d0800afb009730ea3a2f9f8835be8e67a1edd161efaa89823/strif-2.1.0-py3-none-any.whl", hash = "sha256:eab5372414e75ffbe2c6ac7faffca691fdeaf2c36b5b012c3b7286f07a3b551c", size = 11679 },
 ]
 
 [[package]]

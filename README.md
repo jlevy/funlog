@@ -3,26 +3,32 @@
 `funlog` is a tiny but useful package that offers a few Python decorators to log
 function calls, with good control over what gets logged and when.
 
-It also times the function call and logs arguments briefly but clearly, abbreviating
-arguments like long strings or dataclasses.
+We all do quick print debugging sometimes.
+Sometimes this is via log statements or other times simply with print(). Logging
+decorators are a nice compromise between the simplicity of print debugging with more
+complex or careful log statements.
 
-It is fully customizable with optional decorator arguments.
-You can log only slow calls, only if a function modifies its first argument, or tally
-calls and log them later.
+In addition to logging function calls, `funlog` also times the function call and logs
+arguments briefly but clearly, abbreviating arguments like long strings or dataclasses.
+
+The decorator is simple but fully customizable with optional arguments.
+You can log only slow calls, log only calls or only returns or only call timings, or
+tally calls and log them later.
 
 I'm publishing it standalone since I often like to drop this into projects.
 It's often even faster than quick print-debugging and it lets you do very lightweight
 profiling by getting when certain functions are taking a lot of time and tallies of
 function calls and runtimes per function after a program runs a while or at exit.
 
-Minimal dependencies (only the tiny [strif](https://github.com/jlevy/strif)).
-
-## Installation
+It deliberately has **zero dependencies** and is a single file with ~500 lines of code.
 
 ## Installation
 
 Add the [`funlog`](https://pypi.org/project/funlog/) package to your environment in the
 usual way with `pip install funlog`, `poetry add funlog`, or `uv add funlog`.
+
+Or if for some reason you prefer not to change the dependencies of your project at all,
+just copy the single file [`funlog.py`](/src/funlog/funlog.py).
 
 ## Usage
 

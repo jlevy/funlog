@@ -1,7 +1,11 @@
 import functools
 import logging
+import re
+import threading
 import time
 from collections.abc import Callable, Iterable
+from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import (
     Any,
     Literal,
@@ -9,8 +13,6 @@ from typing import (
     TypeAlias,
     TypeVar,
 )
-
-from strif import abbrev_str, quote_if_needed, single_line
 
 EMOJI_CALL_BEGIN = "≫"
 EMOJI_CALL_END = "≪"
@@ -26,6 +28,93 @@ LogFunc: TypeAlias = Callable[..., None]
 DEFAULT_TRUNCATE = 200
 
 log = logging.getLogger(__name__)
+
+# ------------------------------------------------------------------------------
+# strif functions
+# ------------------------------------------------------------------------------
+
+# (These functions are simply copied from strif to minimize dependencies.)
+
+
+def abbrev_str(string: str, max_len: int | None = 80, indicator: str = "…") -> str:
+    """
+    Abbreviate a string, adding an indicator like an ellipsis if required. Set `max_len` to
+    None or 0 not to truncate items.
+    """
+    if not string or not max_len or len(string) <= max_len:
+        return string
+    elif max_len <= len(indicator):
+        return string[:max_len]
+    else:
+        return string[: max_len - len(indicator)] + indicator
+
+
+def single_line(text: str) -> str:
+    """
+    Convert newlines and other whitespace to spaces.
+    """
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def is_quotable(s: str) -> bool:
+    """
+    Does this string need to be quoted? Same as the logic used by `shlex.quote()`
+    but with the addition of ~ since this character isn't generally needed to be quoted.
+    """
+    return bool(re.compile(r"[^\w@%+=:,./~-]").search(s))
+
+
+def quote_if_needed(
+    arg: Any,
+    to_str: Callable[[Any], str] = str,
+    quote: Callable[[Any], str] = repr,
+    is_quotable: Callable[[str], bool] = is_quotable,
+) -> str:
+    """
+    A friendly way to format a Path or string for display, adding quotes only
+    if needed for clarity. Intended for brevity and readability, not as a
+    parsable format.
+
+    Quotes strings similarly to `shlex.quote()`, so is mostly compatible with
+    shell quoting rules. By default, uses `str()` on non-string objects and
+    `repr()` for quoting, so is compatible with Python.
+    ```
+    print(quote_if_needed("foo")) -> foo
+    print(quote_if_needed("item_3")) -> item_3
+    print(quote_if_needed("foo bar")) -> 'foo bar'
+    print(quote_if_needed("!foo")) -> '!foo'
+    print(quote_if_needed("")) -> ''
+    print(quote_if_needed(None)) -> None
+    print(quote_if_needed(Path("file.txt"))) -> file.txt
+    print(quote_if_needed(Path("my file.txt"))) -> 'my file.txt'
+    print(quote_if_needed("~/my/path/file.txt")) -> '~/my/path/file.txt'
+    ```
+
+    For true shell compatibility, use `shlex.quote()` instead. But note
+    `shlex.quote()` can be confusingly ugly because of shell quoting rules:
+    ```
+    print(quote_if_needed("it's a string")) -> "it's a string"
+    print(shlex.quote("it's a string")) -> 'it'"'"'s a string'
+    ```
+
+    Can pass in `to_str` and `quote` functions to customize this behavior.
+    """
+    if not arg:
+        return quote(arg)
+    if not isinstance(arg, str) and not isinstance(arg, Path):
+        return to_str(arg)
+
+    if isinstance(arg, Path):
+        arg = str(arg)  # Treat Paths like strings for display.
+    if is_quotable(arg):
+        return quote(arg)
+    else:
+        return to_str(arg)
+
+
+# ------------------------------------------------------------------------------
+# Utilities
+# ------------------------------------------------------------------------------
 
 
 def _get_log_func(level: LogLevelStr, log_func: LogFunc | None = None) -> LogFunc:
@@ -134,6 +223,10 @@ def format_func_call(
 
     return f"{func_name}({format_args(args, kwargs, to_str)})"
 
+
+# ------------------------------------------------------------------------------
+# Logging decorators
+# ------------------------------------------------------------------------------
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -290,3 +383,128 @@ def log_if_modifies(
         return wrapper
 
     return decorator
+
+
+# ------------------------------------------------------------------------------
+# Tallying decorators
+# ------------------------------------------------------------------------------
+
+
+@dataclass
+class Tally:
+    calls: int = 0
+    total_time: float = 0.0
+    last_logged_count: int = 0
+    last_logged_total_time: float = 0.0
+
+
+_tallies: dict[str, Tally] = {}
+_tallies_lock = threading.Lock()
+
+
+DISABLED = float("inf")
+
+
+def tally_calls(
+    level: LogLevelStr = "info",
+    min_total_runtime: float = 0.0,
+    periodic_ratio: float = 2.0,
+    if_slower_than: float = DISABLED,
+    log_func: LogFunc | None = None,
+    include_module: bool = True,
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    """
+    Decorator to monitor performance by tallying function calls and total runtime, only logging
+    periodically (every time calls exceed `periodic_ratio` more in count or runtime than the last
+    time it was logged) or if runtime is greater than `if_slower_than` seconds).
+
+    Currently does not log exceptions.
+    """
+
+    log_func = _get_log_func(level, log_func)
+
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            start_time = time.time()
+
+            result = func(*args, **kwargs)
+
+            end_time = time.time()
+            elapsed = end_time - start_time
+
+            func_name = function_name(func, include_module)
+
+            should_log = False
+            calls: int = 0
+            total_time: float = 0.0
+
+            with _tallies_lock:
+                if func_name not in _tallies:
+                    _tallies[func_name] = Tally()
+
+                _tallies[func_name].calls += 1
+                _tallies[func_name].total_time += elapsed
+
+                should_log = _tallies[func_name].total_time >= min_total_runtime and (
+                    elapsed > if_slower_than
+                    or _tallies[func_name].calls
+                    >= periodic_ratio * _tallies[func_name].last_logged_count
+                    or _tallies[func_name].total_time
+                    >= periodic_ratio * _tallies[func_name].last_logged_total_time
+                )
+
+                if should_log:
+                    calls = _tallies[func_name].calls
+                    total_time = _tallies[func_name].total_time
+                    _tallies[func_name].last_logged_count = calls
+                    _tallies[func_name].last_logged_total_time = total_time
+
+            if should_log:
+                log_func(
+                    "%s %s() took %s, now called %d times, %s avg per call, total time %s",
+                    EMOJI_TIMING,
+                    func_name,
+                    format_duration(elapsed),
+                    calls,
+                    format_duration(total_time / calls),
+                    format_duration(total_time),
+                )
+
+            return result
+
+        return wrapper
+
+    return decorator
+
+
+def log_tallies(
+    level: LogLevelStr = "info",
+    if_slower_than: float = 0.0,
+    log_func: LogFunc | None = None,
+):
+    """
+    Log all tallies and runtimes of tallied functions.
+    """
+    log_func = _get_log_func(level, log_func)
+
+    with _tallies_lock:
+        tallies_copy = {k: replace(t) for k, t in _tallies.items()}
+
+    tallies_to_log = {k: t for k, t in tallies_copy.items() if t.total_time >= if_slower_than}
+    if tallies_to_log:
+        log_lines: list[str] = []
+        log_lines.append(f"{EMOJI_TIMING} Function tallies:")
+        for fkey, t in sorted(
+            tallies_to_log.items(), key=lambda item: item[1].total_time, reverse=True
+        ):
+            log_lines.append(
+                "    %s() was called %d times, total time %s, avg per call %s"  # noqa: UP031
+                % (
+                    fkey,
+                    t.calls,
+                    format_duration(t.total_time),
+                    format_duration(t.total_time / t.calls) if t.calls else "N/A",
+                )
+            )
+        log_func("\n".join(log_lines))
