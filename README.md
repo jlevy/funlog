@@ -23,19 +23,51 @@ INFO:≫ Call: __main__.add(5, 5)
 INFO:≪ Call done: __main__.add() took 0.00ms: 10
 ```
 
-In addition to logging function calls, `funlog` decorators also time the function call
-and can log arguments briefly but clearly, abbreviating arguments like long strings or
-dataclasses.
+In addition to logging function calls, `funlog` decorators can log arguments briefly but
+clearly, abbreviating arguments like long strings or dataclasses and also time the
+function call (and logs it in a friendly way in milliseconds or seconds).
 
 I'm publishing it standalone since I have found over the years I frequently want to drop
-it into projects. It's often even easier to use than quick print debugging.
+it into projects. It's often even easier to write than a quick print debugging statement
+or a single log statement.
 
-In addition to logging calls, it lets you do very lightweight profiling by having
-warnings in production when certain functions are take more than a specified amount of
-time. Finally, you can use the decorators to get tallies of function calls and runtimes
-per function after a program runs a while or at exit.
+In addition to logging calls, it lets you do *very* simple profiling by having warnings
+in production when certain functions are take more than a specified amount of time.
+Finally, you can use the decorators to get tallies of function calls and runtimes per
+function after a program runs a while or at exit.
 
 It deliberately has **zero dependencies** and is a single file with ~500 lines of code.
+
+## Installation
+
+Add the [`funlog`](https://pypi.org/project/funlog/) package to your environment in the
+usual way with `pip install funlog`, `poetry add funlog`, or `uv add funlog`.
+
+Or if for some reason you prefer not to change the dependencies of your project at all,
+just copy the single file [`funlog.py`](/src/funlog/funlog.py).
+
+## Mini FAQ
+
+- **Isn't it better to do real logging?** It's not much different from regular logging;
+  think of these decorators as simply as a syntactic convenience.
+  The biggest benefit is it's less typing a log statement: it handles the name of the
+  function, the args and return values, etc and it also truncates values so large values
+  aren't logged by accident.
+
+- **Doesn't this create tons of spam in your logs?** This is no different from regular
+  logging. It only will if you use it on functions that are called a lot.
+  It tends to be useful either for higher-level functions (like making an LLM call that
+  takes a few seconds and consumes resources anyway) or with the `if_slower_than_sec`
+  option so it only logs unexpectedly slow calls.
+
+- **Is this just a poor version of tracing?** The goal is to be as simple as possible,
+  even useful on little command-line apps.
+  If you're wanting proper visibility into function calls on production cloud-deployed
+  apps, you probably want something more powerful, like OpenTelemetry.
+
+- **What about when you only want to log sometimes, not on every call?** Probably just
+  use a regular log statement.
+  Or only log tallies or use the `if_slower_than_sec` option.
 
 ## Options
 
@@ -63,14 +95,6 @@ custom `log_func` to override that.
 
 Also by default, it shows values using `quote_if_needed()`, which is brief and very
 readable. You can pass in a custom `repr_func` to change that.
-
-## Installation
-
-Add the [`funlog`](https://pypi.org/project/funlog/) package to your environment in the
-usual way with `pip install funlog`, `poetry add funlog`, or `uv add funlog`.
-
-Or if for some reason you prefer not to change the dependencies of your project at all,
-just copy the single file [`funlog.py`](/src/funlog/funlog.py).
 
 ## Usage
 
