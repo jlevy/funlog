@@ -19,9 +19,10 @@ Minimal dependencies (only the tiny [strif](https://github.com/jlevy/strif)).
 
 ## Installation
 
-```shell
-pip install funlog
-```
+## Installation
+
+Add the [`funlog`](https://pypi.org/project/funlog/) package to your environment in the
+usual way with `pip install funlog`, `poetry add funlog`, or `uv add funlog`.
 
 ## Usage
 
