@@ -152,6 +152,17 @@ There are several other options.
 See docstrings and [test_examples.py](tests/test_examples.py) for more docs and examples
 on all the options.
 
+## Alternatives
+
+The main alternative I've seen is
+[logdecorator](https://github.com/sighalt/logdecorator).
+It has similar use cases but a more explicit usage style, where where you give the
+messages to the decorator itself.
+It seems like a good option but personally, I find that if I'm writing the log message,
+I'd often rather just use a regular log statement.
+The benefit of `funlog` is it is very quick to add or remove.
+Also it does not offer tallies or timings like `funlog` does.
+
 * * *
 
 *This project was built from
