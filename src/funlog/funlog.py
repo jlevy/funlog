@@ -249,8 +249,10 @@ def log_calls(
     Decorator to log function calls and returns and time taken, with optional display of
     arguments and return values.
 
-    You can control whether to show arg values and return values with `show_args` and
-    `show_return_value` (truncating at `truncate_length`).
+    You can control whether to show arg values and return values:
+
+    - `show_args` to show the function arguments (truncating at `truncate_length`)
+    - `show_return_value` to show the return value (truncating at `truncate_length`)
 
     By default both calls and returns are logged, but this is also customizable:
 
@@ -261,8 +263,11 @@ def log_calls(
     If `if_slower_than_sec` is set, only log calls that take longer than that number of
     seconds.
 
-    By default, uses standard logging with the given `level`, but you can pass in a a custom
-    `log_func` to override that. By default shows values using `quot
+    By default, uses standard logging with the given `level`, but you can pass in a custom
+    `log_func` to override that.
+
+    By default, it shows values using `quote_if_needed()`, which is brief and very readable.
+    You can pass in a custom `repr_func` to change that.
     """
 
     def to_str(value: Any) -> str:

@@ -1,24 +1,64 @@
 # funlog
 
-`funlog` is a tiny but useful package that offers a few Python decorators to log
-function calls, with good control over what gets logged and when.
+`funlog` is a tiny but useful package that offers a few Python decorators to log or
+tally function calls, with good control over what gets logged and when.
+
+## Why Decorator Logging?
 
 We all do quick print debugging sometimes.
-Sometimes this is via log statements or other times simply with print(). Logging
-decorators are a nice compromise between the simplicity of print debugging with more
-complex or careful log statements.
+Sometimes this is via log statements or other times simply with `print()`.
 
-In addition to logging function calls, `funlog` also times the function call and logs
-arguments briefly but clearly, abbreviating arguments like long strings or dataclasses.
+Logging decorators are a nice compromise between the simplicity of print debugging with
+more complex or careful log statements:
 
-The decorator is simple but fully customizable with optional arguments.
-You can log only slow calls, log only calls or only returns or only call timings, or
-tally calls and log them later.
+```python
+@log_calls()
+def add(a, b):
+    return a + b
+```
 
-I'm publishing it standalone since I often like to drop this into projects.
-It's often even faster than quick print-debugging and it lets you do very lightweight
-profiling by getting when certain functions are taking a lot of time and tallies of
-function calls and runtimes per function after a program runs a while or at exit.
+Then in the logs you will have:
+```
+INFO:≫ Call: __main__.add(5, 5)
+INFO:≪ Call done: __main__.add() took 0.00ms: 10
+```
+
+In addition to logging function calls, `funlog` decorators also time the function call
+and can log arguments briefly but clearly, abbreviating arguments like long strings or
+dataclasses.
+
+The decorator is simple with reasonable defaults but is also fully customizable with
+optional arguments to the decorator.
+You can control whether to show arg values and return values:
+
+- `show_args` to log the function arguments (truncating at `truncate_length`)
+
+- `show_return_value` to log the return value (truncating at `truncate_length`)
+
+By default both calls and returns are logged, but this is also customizable:
+
+- `show_calls_only=True` to log only calls
+
+- `show_returns_only=True` to log only returns
+
+- `show_timing_only=True` only logs the timing of the call very briefly
+
+If `if_slower_than_sec` is set, only log calls that take longer than that number of
+seconds.
+
+By default, uses standard logging with the given `level`, but you can pass in a custom
+`log_func` to override that.
+
+By default, it shows values using `quote_if_needed()`, which is brief and very readable.
+You can pass in a custom `repr_func` to change that.
+
+I'm publishing it standalone since I have found over the years I frequently want to drop
+it into projects. It's often even easier to use than quick print debugging.
+
+It also lets you do very lightweight profiling by having warnings in production when
+certain functions are taking a lot of time.
+Finally, is easy to get tallies of function calls and runtimes per function after a
+program runs a while or at exit.
 
 It deliberately has **zero dependencies** and is a single file with ~500 lines of code.
 
@@ -32,7 +72,7 @@ just copy the single file [`funlog.py`](/src/funlog/funlog.py).
 
 ## Usage
 
-Suppose you have a few functions:
+Here is a more complex example with tallies:
 
 ```python
 import time
@@ -67,9 +107,10 @@ def long_range(n):
     return " ".join(str(i) for i in range(int(n)))
 
 
-# Now call the functions.
+# Now call the functions:
 long_range(fibonacci(add(add(5, 5), 2)))
 
+# And then log tallies of all calls:
 log_tallies()
 ```
 
