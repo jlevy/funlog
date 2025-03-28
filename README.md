@@ -156,14 +156,22 @@ on all the options.
 
 ## Alternatives
 
-The main alternative I've seen is
+This is intended to only be a tiny library.
+It doesn't replace any other logging framework or telemetry system.
+
+The main alternative that is similarly simple is
 [logdecorator](https://github.com/sighalt/logdecorator).
-It has similar use cases but a more explicit usage style, where where you give the
-messages to the decorator itself.
+It has similar use cases but a more explicit usage style, where you give the messages to
+the decorator itself.
 It seems like a good option but personally, I find that if I'm writing the log message,
 I'd often rather just use a regular log statement.
-The benefit of `funlog` is it is very quick to add or remove.
-Also it does not offer tallies or timings like `funlog` does.
+(Also it does not offer tallies or timings like `funlog` does.)
+
+[Eliot](https://github.com/itamarst/eliot) is an interesting and more ambitious logging
+framework that includes somewhat similar decorator-based logging.
+
+The main benefit of `funlog` is it is very simple to drop into a project when you want
+it and it's quick to add or remove a log decoration.
 
 * * *
 
