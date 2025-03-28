@@ -27,8 +27,20 @@ In addition to logging function calls, `funlog` decorators also time the functio
 and can log arguments briefly but clearly, abbreviating arguments like long strings or
 dataclasses.
 
-The decorator is simple with reasonable defaults but is also fully customizable with
-optional arguments to the decorator.
+I'm publishing it standalone since I have found over the years I frequently want to drop
+it into projects. It's often even easier to use than quick print debugging.
+
+In addition to logging calls, it lets you do very lightweight profiling by having
+warnings in production when certain functions are take more than a specified amount of
+time. Finally, you can use the decorators to get tallies of function calls and runtimes
+per function after a program runs a while or at exit.
+
+It deliberately has **zero dependencies** and is a single file with ~500 lines of code.
+
+## Options
+
+The `log_calls()` decorator is simple with reasonable defaults but is also fully
+customizable with optional arguments to the decorator.
 You can control whether to show arg values and return values:
 
 - `show_args` to log the function arguments (truncating at `truncate_length`)
@@ -46,21 +58,11 @@ By default both calls and returns are logged, but this is also customizable:
 If `if_slower_than_sec` is set, only log calls that take longer than that number of
 seconds.
 
-By default, uses standard logging with the given `level`, but you can pass in a custom
-`log_func` to override that.
+By default, it uses standard logging with the given `level`, but you can pass in a
+custom `log_func` to override that.
 
-By default, it shows values using `quote_if_needed()`, which is brief and very readable.
-You can pass in a custom `repr_func` to change that.
-
-I'm publishing it standalone since I have found over the years I frequently want to drop
-it into projects. It's often even easier to use than quick print debugging.
-
-It also lets you do very lightweight profiling by having warnings in production when
-certain functions are taking a lot of time.
-Finally, is easy to get tallies of function calls and runtimes per function after a
-program runs a while or at exit.
-
-It deliberately has **zero dependencies** and is a single file with ~500 lines of code.
+Also by default, it shows values using `quote_if_needed()`, which is brief and very
+readable. You can pass in a custom `repr_func` to change that.
 
 ## Installation
 
