@@ -49,6 +49,7 @@ source = { editable = "." }
 dev = [
     { name = "basedpyright" },
     { name = "codespell" },
+    { name = "funlog" },
     { name = "pytest" },
     { name = "rich" },
     { name = "ruff" },
@@ -60,6 +61,7 @@ dev = [
 dev = [
     { name = "basedpyright", specifier = ">=1.28.2" },
     { name = "codespell", specifier = ">=2.4.1" },
+    { name = "funlog", specifier = ">=0.2.0" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "rich", specifier = ">=13.9.4" },
     { name = "ruff", specifier = ">=0.11.0" },

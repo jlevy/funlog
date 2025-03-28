@@ -3,6 +3,7 @@
 [project.urls]
 Repository = "https://github.com/jlevy/funlog"
 # Homepage = "https://..."
+# Documentation = "https://..."
 
 [project]
 name = "funlog"
@@ -16,7 +17,36 @@ license = "MIT"
 requires-python = ">=3.10,<4.0"
 dynamic = ["version"]
 
-dependencies = []  # None!
+
+
+# https://pypi.org/classifiers/
+# Adjust as needed:
+classifiers = [
+    # Adjust as needed:
+    "Development Status :: 4 - Beta",
+    # "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+    # Include this to avoid accidentally publishing to PyPI:
+    # "Private :: Do Not Upload",
+]
+
+
+# ---- Main dependencies ----
+
+dependencies = [
+]
+
+
+# ---- Dev dependencies ----
+
 
 [dependency-groups]
 dev = [
@@ -25,11 +55,12 @@ dev = [
     "codespell>=2.4.1",
     "rich>=13.9.4",
     "basedpyright>=1.28.2",
+    "funlog>=0.2.0",
 ]
 
 [project.scripts]
 # Add script entry points here.
-# funlog = "funlog:main"
+funlog = "funlog:main"
 
 # ---- Build system ----
 
@@ -50,6 +81,10 @@ source = "uv-dynamic-versioning"
 vcs = "git"
 style = "pep440"
 bump = "true"
+
+[tool.hatch.build.targets.wheel]
+# The source location for the package.
+packages = ["src/funlog"]
 
 
 # ---- Settings ----
@@ -95,19 +130,28 @@ ignore = [
     "ISC002", # https://docs.astral.sh/ruff/rules/multi-line-implicit-string-concatenation/
 ]
 
-[tool.mypy]
-disable_error_code = [
-    "import-untyped",
-]
 
+# BasedPyright currently seems like the best type checker option, much faster
+# than mypy and with a good extension for VSCode/Cursor.
+# https://marketplace.visualstudio.com/items?itemName=detachhead.basedpyright
+# https://docs.basedpyright.com/latest/configuration/config-files/#sample-pyprojecttoml-file
 [tool.basedpyright]
 include = ["src", "tests", "devtools"]
-# Especially noisy warnings:
+# Make ignoring type warnings easier:
+reportIgnoreCommentWithoutRule = false
+reportUnnecessaryTypeIgnoreComment = false
+# A few typically noisy warnings, comment/uncomment as desired:
+reportMissingTypeStubs = false
 reportUnusedCallResult = false
+# reportMissingImports = false
+# reportUnnecessaryIsInstance = false
+# reportUnreachable = false
 reportAny = false
 reportExplicitAny = false
+# reportUnknownVariableType = false
+# reportUnknownArgumentType = false
+# Especially noisy warnings:
 reportPrivateUsage = false
-reportMissingTypeStubs = false
 
 [tool.codespell]
 # ignore-words-list = "foo,bar"

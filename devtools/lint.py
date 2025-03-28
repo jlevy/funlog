@@ -13,10 +13,10 @@ def main():
     rprint()
 
     errcount = 0
-    errcount += _run(["codespell", "--write-changes", *SRC_PATHS, *DOC_PATHS])
-    errcount += _run(["ruff", "check", "--fix", *SRC_PATHS])
-    errcount += _run(["ruff", "format", *SRC_PATHS])
-    errcount += _run(["basedpyright", *SRC_PATHS])
+    errcount += run(["codespell", "--write-changes", *SRC_PATHS, *DOC_PATHS])
+    errcount += run(["ruff", "check", "--fix", *SRC_PATHS])
+    errcount += run(["ruff", "format", *SRC_PATHS])
+    errcount += run(["basedpyright", *SRC_PATHS])
 
     rprint()
 
@@ -30,7 +30,7 @@ def main():
 
 
 @log_calls(level="warning", show_timing_only=True)
-def _run(cmd: list[str]) -> int:
+def run(cmd: list[str]) -> int:
     rprint()
     rprint(f"[bold green]❯ {' '.join(cmd)}[/bold green]")
     errcount = 0
