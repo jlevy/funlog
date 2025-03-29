@@ -46,59 +46,51 @@ usual way with `pip install funlog`, `poetry add funlog`, or `uv add funlog`.
 Or if for some reason you prefer not to change the dependencies of your project at all,
 just copy the single file [`funlog.py`](/src/funlog/funlog.py).
 
-## Mini FAQ
+## Examples
 
-- **Isn't it better to do real logging?** It's not much different from regular logging;
-  think of these decorators as simply as a syntactic convenience.
-  The biggest benefit is it's less typing a log statement: it handles the name of the
-  function, the args and return values, etc and it also truncates values so large values
-  aren't logged by accident.
+A more realistic example is the small
+[lint script](https://github.com/jlevy/funlog/blob/main/devtools/lint.py) from this
+project:
 
-- **Doesn't this create tons of spam in your logs?** This is no different from regular
-  logging. It only will if you use it on functions that are called a lot.
-  It tends to be useful either for higher-level functions (like making an LLM call that
-  takes a few seconds and consumes resources anyway) or with the `if_slower_than_sec`
-  option so it only logs unexpectedly slow calls.
+```python
+import subprocess
+from rich import print as rprint
+from funlog import log_calls
 
-- **Is this just a poor version of tracing?** The goal is to be as simple as possible,
-  even useful on little command-line apps.
-  If you're wanting proper visibility into function calls on production cloud-deployed
-  apps, you probably want something more powerful, like OpenTelemetry.
+@log_calls(level="warning", show_timing_only=True)
+def run(cmd: list[str]) -> int:
+    rprint()
+    rprint(f"[bold green]❯ {' '.join(cmd)}[/bold green]")
+    errcount = 0
+    try:
+        subprocess.run(cmd, text=True, check=True)
+    except subprocess.CalledProcessError as e:
+        rprint(f"[bold red]Error: {e}[/bold red]")
+        errcount = 1
 
-- **What about when you only want to log sometimes, not on every call?** Probably just
-  use a regular log statement.
-  Or only log tallies or use the `if_slower_than_sec` option.
+    return errcount
+```
 
-## Options
+It has the output
 
-The `log_calls()` decorator is simple with reasonable defaults but is also fully
-customizable with optional arguments to the decorator.
-You can control whether to show arg values and return values:
+```
+❯ codespell --write-changes src tests devtools README.md
+⏱ Call to run took 88.78ms
 
-- `show_args` to log the function arguments (truncating at `truncate_length`)
+❯ ruff check --fix src tests devtools
+All checks passed!
+⏱ Call to run took 310ms
 
-- `show_return_value` to log the return value (truncating at `truncate_length`)
+❯ ruff format src tests devtools
+4 files left unchanged
+⏱ Call to run took 10.81ms
 
-By default both calls and returns are logged, but this is also customizable:
+❯ basedpyright src tests devtools
+0 errors, 0 warnings, 0 notes
+⏱ Call to run took 2.07s
+```
 
-- `show_calls_only=True` to log only calls
-
-- `show_returns_only=True` to log only returns
-
-- `show_timing_only=True` only logs the timing of the call very briefly
-
-If `if_slower_than_sec` is set, only log calls that take longer than that number of
-seconds.
-
-By default, it uses standard logging with the given `level`, but you can pass in a
-custom `log_func` to override that.
-
-Also by default, it shows values using `quote_if_needed()`, which is brief and very
-readable. You can pass in a custom `repr_func` to change that.
-
-## Usage
-
-Here is a more complex example with tallies:
+Here is a contrived example to illustrate recursive calls and tallies:
 
 ```python
 import time
@@ -177,6 +169,63 @@ INFO:⏱ Function tallies:
 There are several other options.
 See docstrings and [test_examples.py](tests/test_examples.py) for more docs and examples
 on all the options.
+
+## Mini FAQ
+
+- **Isn't it better to do real logging?** Decorator-based logging isn't much different
+  from regular logging; think of these decorators as simply as a syntactic convenience.
+  Also, they are only handy in certain situations, not something to overuse.
+  The biggest benefit is it's less typing than a full log statement and worrying about
+  formatting: it handles the name of the function, the args and return values, etc and
+  it also truncates values so large values aren't logged by accident.
+
+- **If you want to trace function calls, shouldn't you use a debugger?** Decorator
+  logging doesn't replace a debugger.
+  It's just one more tool where you want some visibility with little effort.
+
+- **Doesn't this create tons of spam in your logs?** Again, this has all the usual
+  considerations of regular logging.
+  It will spam logs if you use it on functions that are called a lot.
+  In production, it tends to be useful either for slower or less frequently called
+  functions (like making an API call that takes a few seconds and consumes resources
+  anyway) or with the `if_slower_than_sec` option so it only logs unexpectedly slow
+  calls or with the tally options.
+
+- **Is this just a poor version of tracing?** The goal is to be as simple as possible,
+  even useful on little command-line apps.
+  If you're wanting proper visibility into function calls on production cloud-deployed
+  apps, you probably want something more appropriate, like OpenTelemetry.
+
+- **What about when you only want to log sometimes, not on every call?** Probably just
+  use a regular log statement.
+  Or only log tallies or use the `if_slower_than_sec` option.
+
+## Options
+
+The `log_calls()` decorator is simple with reasonable defaults but is also fully
+customizable with optional arguments to the decorator.
+You can control whether to show arg values and return values:
+
+- `show_args` to log the function arguments (truncating at `truncate_length`)
+
+- `show_return_value` to log the return value (truncating at `truncate_length`)
+
+By default both calls and returns are logged, but this is also customizable:
+
+- `show_calls_only=True` to log only calls
+
+- `show_returns_only=True` to log only returns
+
+- `show_timing_only=True` only logs the timing of the call very briefly
+
+If `if_slower_than_sec` is set, only log calls that take longer than that number of
+seconds.
+
+By default, it uses standard logging with the given `level`, but you can pass in a
+custom `log_func` to override that.
+
+Also by default, it shows values using `quote_if_needed()`, which is brief and very
+readable. You can pass in a custom `repr_func` to change that.
 
 ## Alternatives
 
